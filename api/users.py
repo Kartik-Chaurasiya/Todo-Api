@@ -1,58 +1,28 @@
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException, APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, status, Depends
+from sqlalchemy.orm import Session
+from api.utils.users import create_user, get_user, get_user_by_email, get_users, deactivate_user
+from db.db_setup import get_db
+from pydantic_models.user import UserCreate, UserBase, User, UserResponse
 
-router = APIRouter()
-current_id = 1
+router = APIRouter(
+    prefix="/users",
+    tags=['Users']
+)
 
-users = []
-
-class UserBase(BaseModel):
-    username: str
-    email_id: str
-
-class UserCreate(UserBase):
-    password: str
-
-class User(UserBase):
-    id: int
-
-    class Config:
-        orm_mode = True
-
-
-@router.get("/users", response_model=List[User])
-async def get_users():
+@router.get("", response_model=List[User])
+async def get_all_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    users = get_users(db, skip = skip, limit = limit)
     return users
 
-@router.get("/user/{id}", response_model=User)
-async def get_user_by_id(id: int):
-    user = next((user for user in users if user.id == id), None)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
+async def create_new_user(users: UserCreate, db: Session = Depends(get_db)):
+    return create_user(db, users)
 
-@router.post("/users", response_model=User)
-async def create_user(user: UserCreate):
-    global current_id
-    new_user = User(id=current_id, **user.model_dump())
-    current_id += 1
-    users.append(new_user)
-    return new_user
+@router.get("/{id}", status_code=status.HTTP_200_OK , response_model=UserResponse)
+async def get_user_id(id : int, db: Session = Depends(get_db)):
+    return get_user(db, id)
 
-@router.put("/user/{id}", response_model=User)
-async def update_user(id: int, user: UserCreate):
-    existing_user = next((user for user in users if user.id == id), None)
-    if existing_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    existing_user.username = user.username
-    existing_user.email_id = user.email_id
-    existing_user.password = user.password
-    return existing_user
-
-@router.delete("/user/{id}")
-async def delete_user(id: int):
-    global users
-    users = [user for user in users if user.id != id]
-    return {"message": "User deleted successfully"}
-    
+@router.delete("/{id}")
+async def delete_user(id: int, db: Session = Depends(get_db)):
+    return deactivate_user(db, id)
