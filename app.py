@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api import users, todos
+from api import users, todos, auth
 from db.db_setup import engine
 from db.models import user, todo
 
@@ -21,6 +21,7 @@ app = FastAPI(
 
 app.include_router(users.router)
 app.include_router(todos.router)
+app.include_router(auth.router)
 
 @app.get("/")
 async def root():
