@@ -16,7 +16,7 @@ app = FastAPI(
     },
     license_info={
         "name": "MIT",
-    },
+    }
 )
 
 app.include_router(users.router)
