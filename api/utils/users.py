@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from db.models.user import User
+from db.models.todo import Todo
 from pydantic_models.user import UserCreate
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from api.utils.utils import hash, is_valid_email, is_valid_password
 
 def get_user(db: Session, user_id: int):
@@ -56,9 +57,20 @@ def create_user(db: Session, user: UserCreate):
     return new_user
 
 def deactivate_user(db: Session, user_id: int):
+    # Get the user from the database
     user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User not found")
+
+    # Deactivate the user by setting is_active to False
     user.is_active = False
+
+    # Deactivate all todos associated with the user
+    todos = db.query(Todo).filter(Todo.user_id == user_id).all()
+    for todo in todos:
+        todo.is_active = False
+
     db.commit()
-    return {"message": "User deactivated successfully"}
+    return {"message": "User and associated todos deleted successfully"}
 
 

@@ -1,29 +1,4 @@
-from pydantic import BaseModel
-from datetime import datetime
-from datetime import date, datetime
-
-# class TodoBase(BaseModel):
-#     todo_name : str
-#     todo_desc : str
-#     complete_by : date
-#     priority : int = 1
-
-# class CreateTodo(TodoBase):
-#     completed : bool = False
-#     is_active: bool = True
-
-# class TodoResponse(TodoBase):
-#     id : int
-#     user_id : int
-#     completed : bool
-#     is_active : bool
-#     created_at : datetime
-#     updated_at : datetime
-
-#     class Config:
-#         from_attributes = True
-
-from pydantic import BaseModel, conlist
+from pydantic import BaseModel, Field
 from datetime import date, datetime
 from typing import List
 
@@ -53,3 +28,13 @@ class TodoListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+    
+class TodoSearch(BaseModel):
+    todo_name: str = Field(None, title="Todo Name")
+    complete_by: date = Field(None, title="Complete By Date")
+    created_at: date = Field(None, title="Todo Date")
+    priority: int = Field(None, title="Todo Priority")
+    completed: bool = Field(None, title="Todo Completed")
+
+class TodoComplete(BaseModel):
+    id: List[int] = Field(None, title="Todo IDs")
